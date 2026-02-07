@@ -1,0 +1,58 @@
+# values.yaml
+
+# Use LocalExecutor for Docker Desktop (simple, no Celery needed)
+executor: LocalExecutor
+
+# PostgreSQL database (built-in)
+postgresql:
+  enabled: true
+  postgresqlDatabase: airflow
+  postgresqlUsername: airflow
+  postgresqlPassword: airflow
+
+# Redis not needed for LocalExecutor
+redis:
+  enabled: false
+
+# Airflow image
+airflow:
+  image:
+    repository: apache/airflow
+    tag: 2.7.1  # pick the latest stable version
+
+# Admin user creation
+users:
+  create:
+    - username: admin
+      password: admin
+      role: Admin
+      email: admin@example.com
+      firstname: Admin
+      lastname: User
+
+# DAGs folder (optional Git sync example)
+dags:
+  gitSync:
+    enabled: true
+    repo: https://github.com/SOTA9/k8s_test_airflow_deployment.git
+    branch: main
+    root: /opt/airflow/dags
+    wait: 30
+    rev: HEAD
+
+# Webserver configuration
+webserver:
+  service:
+    type: ClusterIP
+  port: 8080
+  defaultUser:
+    enabled: false  # we use the create-user job instead
+
+# Resource limits (adjust for Docker Desktop)
+resources:
+  requests:
+    cpu: 500m
+    memory: 1024Mi
+  limits:
+    cpu: 1
+    memory: 2048Mi
