@@ -1,4 +1,4 @@
-# Apache Airflow on Kubernetes — Docker Desktop
+# Apache Airflow on Kubernetes Docker Desktop
 **Helm Chart 1.18.0 · Airflow 2.9.2 · LocalExecutor**
 
 ---
@@ -14,12 +14,9 @@ Before starting, make sure you have the following installed:
 **Enable Kubernetes in Docker Desktop:**
 > Docker Desktop → Settings → Kubernetes → Enable Kubernetes → Apply & Restart
 
-**Share your DAGs folder with Docker Desktop:**
-> Docker Desktop → Settings → Resources → File Sharing → Add your project drive (e.g. `C:\`)
-
 ---
 
-## Step 1 — Add the Airflow Helm Repository
+## Step 1 : Add the Airflow Helm Repository
 
 ```powershell
 helm repo add apache-airflow https://airflow.apache.org
@@ -28,7 +25,7 @@ helm repo update
 
 ---
 
-## Step 2 — Create the Airflow Namespace
+## Step 2 : Create the Airflow Namespace
 
 ```powershell
 kubectl create namespace airflow
@@ -36,7 +33,7 @@ kubectl create namespace airflow
 
 ---
 
-## Step 3 — Deploy PostgreSQL
+## Step 3 : Deploy PostgreSQL
 
 ```powershell
 kubectl apply -n airflow -f - <<'EOF'
@@ -100,7 +97,7 @@ kubectl get pods -n airflow -w
 
 ---
 
-## Step 4 — Deploy Airflow
+## Step 4 : Deploy Airflow
 
 ```powershell
 helm upgrade --install airflow apache-airflow/airflow `
@@ -109,11 +106,9 @@ helm upgrade --install airflow apache-airflow/airflow `
   --timeout 10m
 ```
 
-> ⚠ Run this from the root `Kubernetes-deployment/` folder, not from `k8s/`
-
 ---
 
-## Step 5 — Wait for All Pods to Be Ready
+## Step 5 : Wait for All Pods to Be Ready
 
 ```powershell
 kubectl get pods -n airflow -w
@@ -132,7 +127,7 @@ This typically takes **5–8 minutes** on first launch.
 
 ---
 
-## Step 6 — Access the Airflow UI
+## Step 6 : Access the Airflow UI
 
 Start port forwarding (keep this terminal open):
 ```powershell
@@ -150,7 +145,7 @@ http://localhost:8080
 
 ---
 
-## Step 7 — Add DAGs
+## Step 7 : Add DAGs
 
 Simply drop `.py` DAG files into your local `dags/` folder:
 ```
@@ -166,7 +161,7 @@ kubectl exec -n airflow airflow-scheduler-0 -- ls /opt/airflow/dags
 
 ---
 
-## Step 8 — Trigger a DAG
+## Step 8 : Trigger a DAG
 
 1. Go to `http://localhost:8080`
 2. Find your DAG in the list (e.g. `hello_world`)
@@ -188,7 +183,7 @@ kubectl port-forward svc/airflow-webserver 8080:8080 -n airflow
 # http://localhost:8080
 ```
 
-That's it — Kubernetes keeps Airflow running as long as Docker Desktop is open.
+Kubernetes keeps Airflow running as long as Docker Desktop is open.
 
 ---
 
@@ -251,17 +246,3 @@ kubectl describe node | Select-String -Pattern "memory|Capacity|Allocatable"
 | Path mangling in Git Bash | Error mentions `C:/Program Files/Git/opt/...` | Use PowerShell instead |
 | Tasks never finish | Check scheduler logs for "zombie" | `airflow dags clear <dag_id> --yes` |
 
-> 📄 For detailed debugging strategies, see `airflow_debug_guide.pdf`
-
----
-
-## Resource Configuration Summary
-
-| Component | CPU Request | CPU Limit | Memory Request | Memory Limit |
-|---|---|---|---|---|
-| Scheduler | 200m | 1000m | 512Mi | 1500Mi |
-| Webserver | 200m | 1000m | 512Mi | 1500Mi |
-| Triggerer | 100m | 500m | 256Mi | 512Mi |
-| Log Groomer | 50m | 100m | 64Mi | 128Mi |
-
-> Docker Desktop should have at least **6GB RAM** allocated under Settings → Resources → Memory.
