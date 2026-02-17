@@ -1,58 +1,193 @@
-# values.yaml
+defaultAirflowRepository: apache/airflow
+defaultAirflowTag: "2.9.2"
+airflowVersion: "2.9.2"
 
-# Use LocalExecutor for Docker Desktop (simple, no Celery needed)
-executor: LocalExecutor
+images:
+  airflow:
+    repository: apache/airflow
+    tag: "2.9.2"
+    pullPolicy: IfNotPresent
+  pod_template:
+    repository: apache/airflow
+    tag: "2.9.2"
+    pullPolicy: IfNotPresent
+  statsd:
+    pullPolicy: IfNotPresent
 
-# PostgreSQL database (built-in)
+executor: "LocalExecutor"
+
+fernetKey: "fC0WVoAhNT2_cyuKImOeQrTwUD73W3UIQNdNj_zBw1s="
+webserverSecretKey: "be737276d3ff828520929146b203de1c"
+
 postgresql:
-  enabled: true
-  postgresqlDatabase: airflow
-  postgresqlUsername: airflow
-  postgresqlPassword: airflow
+  enabled: false
 
-# Redis not needed for LocalExecutor
+data:
+  metadataConnection:
+    user: airflow
+    pass: airflow
+    host: postgres.airflow.svc.cluster.local
+    port: 5432
+    db: airflow
+    sslmode: disable
+
+config:
+  core:
+    load_examples: "False"
+    dags_are_paused_at_creation: "True"
+    parallelism: "2"
+    max_active_tasks_per_dag: "2"
+    max_active_runs_per_dag: "1"
+  scheduler:
+    min_file_process_interval: "60"
+    dag_dir_list_interval: "60"
+  webserver:
+    expose_config: "True"
+    workers: "1"
+    worker_timeout: "300"
+    web_server_worker_timeout: "300"
+
+dags:
+  persistence:
+    enabled: false
+  gitSync:
+    enabled: false
+  mountPath: /opt/airflow/dags
+
+volumes:
+  - name: local-dags
+    hostPath:
+      path: /run/desktop/mnt/host/c/Users/USER/PycharmProjects/Kubernetes-deployment/dags
+      type: DirectoryOrCreate
+
+volumeMounts:
+  - name: local-dags
+    mountPath: /opt/airflow/dags
+
+scheduler:
+  replicas: 1
+  extraVolumes:
+    - name: local-dags
+      hostPath:
+        path: /run/desktop/mnt/host/c/Users/USER/PycharmProjects/Kubernetes-deployment/dags
+        type: DirectoryOrCreate
+  extraVolumeMounts:
+    - name: local-dags
+      mountPath: /opt/airflow/dags
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1500Mi"
+  logGroomerSidecar:
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "100m"
+        memory: "128Mi"
+  startupProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 20
+    failureThreshold: 30
+    timeoutSeconds: 60
+  livenessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 30
+    failureThreshold: 10
+    timeoutSeconds: 60
+
+webserver:
+  replicas: 1
+  extraVolumes:
+    - name: local-dags
+      hostPath:
+        path: /run/desktop/mnt/host/c/Users/USER/PycharmProjects/Kubernetes-deployment/dags
+        type: DirectoryOrCreate
+  extraVolumeMounts:
+    - name: local-dags
+      mountPath: /opt/airflow/dags
+  defaultUser:
+    enabled: true
+    role: Admin
+    username: admin
+    email: admin@example.com
+    firstName: Admin
+    lastName: User
+    password: admin123
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1500Mi"
+  startupProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 15
+    failureThreshold: 30
+    timeoutSeconds: 30
+  livenessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 30
+    failureThreshold: 10
+    timeoutSeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 15
+    failureThreshold: 10
+    timeoutSeconds: 30
+  service:
+    type: ClusterIP
+    ports:
+      - name: airflow-ui
+        port: 8080
+
+triggerer:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  logGroomerSidecar:
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "100m"
+        memory: "128Mi"
+
+workers:
+  replicas: 0
+
 redis:
   enabled: false
 
-# Airflow image
-airflow:
-  image:
-    repository: apache/airflow
-    tag: 2.7.1  # pick the latest stable version
+statsd:
+  enabled: false
 
-# Admin user creation
-users:
-  create:
-    - username: admin
-      password: admin
-      role: Admin
-      email: admin@example.com
-      firstname: Admin
-      lastname: User
+pgbouncer:
+  enabled: false
 
-# DAGs folder (optional Git sync example)
-dags:
-  gitSync:
-    enabled: true
-    repo: https://github.com/SOTA9/k8s_test_airflow_deployment.git
-    branch: main
-    root: /opt/airflow/dags
-    wait: 30
-    rev: HEAD
+logs:
+  persistence:
+    enabled: false
 
-# Webserver configuration
-webserver:
-  service:
-    type: ClusterIP
-  port: 8080
-  defaultUser:
-    enabled: false  # we use the create-user job instead
+migrateDatabaseJob:
+  enabled: true
+  useHelmHooks: true
 
-# Resource limits (adjust for Docker Desktop)
-resources:
-  requests:
-    cpu: 500m
-    memory: 1024Mi
-  limits:
-    cpu: 1
-    memory: 2048Mi
+createUserJob:
+  useHelmHooks: true
+
+securityContext:
+  runAsUser: 50000
+  fsGroup: 0
