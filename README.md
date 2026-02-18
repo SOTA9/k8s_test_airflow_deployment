@@ -11,8 +11,7 @@ Before starting, make sure you have the following installed:
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Helm 3](https://helm.sh/docs/intro/install/)
 
-**Enable Kubernetes in Docker Desktop:**
-> Docker Desktop → Settings → Kubernetes → Enable Kubernetes → Apply & Restart
+Enable Kubernetes in Docker Desktop
 
 ---
 
@@ -166,9 +165,6 @@ kubectl exec -n airflow airflow-scheduler-0 -- ls /opt/airflow/dags
 1. Go to `http://localhost:8080`
 2. Find your DAG in the list (e.g. `hello_world`)
 3. Toggle the switch on the left to **unpause** it
-4. Click the ▶ **Play** button → **Trigger DAG**
-5. Watch the tasks turn green in the Graph view
-
 ---
 
 ## Daily Workflow (After Initial Setup)
